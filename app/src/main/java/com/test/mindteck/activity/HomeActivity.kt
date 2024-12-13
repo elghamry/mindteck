@@ -1,100 +1,293 @@
 package com.test.mindteck.activity
 
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.widget.ImageView
-import android.widget.LinearLayout
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.databinding.DataBindingUtil
-import androidx.lifecycle.Observer
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.viewpager2.widget.ViewPager2
-import com.test.mindteck.R
-import com.test.mindteck.adapter.ItemAdapter
-import com.test.mindteck.adapter.ViewPagerAdapter
-import com.test.mindteck.databinding.ActivityHomeBinding
-import com.test.mindteck.fragment.CurrentPageBottomSheet
 import com.test.mindteck.model.ItemModel
 import com.test.mindteck.viewmodel.HomeViewModel
 
 class HomeActivity : AppCompatActivity() {
 
-    lateinit var binding: ActivityHomeBinding
-
-    private lateinit var itemAdapter: ItemAdapter
-
-    private lateinit var dots: Array<ImageView?>
     private lateinit var viewModel: HomeViewModel
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_home)
 
+        setContent {
+            ScaffoldApp()
+        }
         viewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
-        val viewPagerAdapter = ViewPagerAdapter(this, viewModel.images)
-        binding.viewPager.adapter = viewPagerAdapter
+    }
 
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun ScaffoldApp() {
+        var showBottomSheet by remember { mutableStateOf(false) }
+        val sheetState = rememberModalBottomSheetState()
 
-        itemAdapter = ItemAdapter(emptyList())
-        binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        binding.recyclerView.adapter = itemAdapter
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    colors = topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.primary,
+                    ),
+                    title = {
+                        Text("Mindteck")
+                    }
+                )
+            },
+            bottomBar = {
 
-        // Observe changes in RecyclerView data
-        viewModel.recyclerViewItems.observe(this, Observer { items ->
-            itemAdapter.updateData(items)
-        })
-        binding.edtSearch.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                viewModel.filterItems(s.toString())
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-
-            }
-        })
-        dots = arrayOfNulls(viewModel.images.size)
-        for (i in 0 until viewModel.images.size) {
-            dots[i] = ImageView(this).apply {
-                setImageResource(R.drawable.default_dot)
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    marginEnd = 8 // Add space between dots
+            },
+            floatingActionButton = {
+                FloatingActionButton(onClick = { showBottomSheet = true }) {
+                    Icon(Icons.Default.Add, contentDescription = "Add")
                 }
             }
-            binding.dotsLayout.addView(dots[i])
-        }
-        dots[0]?.setImageResource(R.drawable.selected_dot)
+        ) { innerPadding ->
 
-        binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                for (i in 0 until viewModel.images.size) {
-                    dots[i]?.setImageResource(R.drawable.default_dot)
+            if (showBottomSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        showBottomSheet = false
+                    },
+                    sheetState = sheetState
+                ) {
+                    // Sheet content
+                    Text("CurrentPage Item size : " +viewModel.recyclerViewItems.value.size.toString() + " Items")
+                    Text(viewModel.itemNameArray.value.joinToString(", "))
+
+                        val topThree = viewModel.itemNameArray.value
+                            .flatMap { it.toList() }
+                            .groupingBy { it }
+                            .eachCount()
+                            .entries
+                            .sortedByDescending { it.value }
+                            .take(3)
+                            .joinToString(", ") { "${it.key} = ${it.value}" }
+
+                        Text(topThree)
+
+
                 }
-                dots[position]?.setImageResource(R.drawable.selected_dot)
-                viewModel.onPageChanged(position)
-                binding.edtSearch.text.clear()
             }
-        })
-        binding.fab.setOnClickListener {
-            val currentData = viewModel.getCurrentPageArrayList()
-            openBottomSheet(currentData)
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                HorizontalPagerSample(viewModel.images)
+                SingleSelectionList(options = viewModel.recyclerViewItems.value?: emptyList())
+
+            }
         }
     }
 
-    private fun openBottomSheet(currentData: List<ItemModel>) {
-        val currentPageDialog: CurrentPageBottomSheet = CurrentPageBottomSheet.newInstance(
-            this, currentData
-        )
-        currentPageDialog.show(
-            supportFragmentManager, CurrentPageBottomSheet.TAG
-        )
+
+    @Composable
+    private fun HorizontalPagerSample(images : MutableState<List<Int>>) {
+
+
+        val pageCount = images.value.size
+
+        val pagerState = rememberPagerState(pageCount / 2) { pageCount }
+
+        ConstraintLayout{
+            val (pager, indicator) = createRefs()
+
+
+            HorizontalPager(
+                modifier = Modifier.fillMaxWidth().constrainAs(
+                    pager
+                ){
+                },
+                state = pagerState,
+            ) { i ->
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .border(1.dp, Color.Gray.copy(alpha = 0.2f), RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(painterResource(images.value[i]),"pager",    modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                }
+            }
+
+            Row(
+                Modifier
+                    .height(25.dp)
+                    .fillMaxWidth()
+                    .constrainAs(
+                        indicator
+                        ){
+                    bottom.linkTo(pager.bottom, margin = 8.dp)
+                },
+                horizontalArrangement = Arrangement.Center
+            ) {
+                repeat(pageCount) { iteration ->
+                    val color = if (pagerState.currentPage == iteration) Color.DarkGray else Color.LightGray
+                    Box(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .background(color, CircleShape)
+                            .size(10.dp)
+                    )
+                }
+            }
+
+
+        }
     }
 
+    @Composable
+    fun SingleSelectionList(
+        options: List<ItemModel>,
+    ) {
+
+        var searchedOption by rememberSaveable { mutableStateOf("") }
+        val filteredItems = remember {
+            mutableStateOf(options)
+        }
+
+        OutlinedTextField(
+            searchedOption,
+            modifier = Modifier
+                .fillMaxWidth(),
+            onValueChange = { selectedSport ->
+                searchedOption = selectedSport
+
+                filteredItems.value =
+                    if (searchedOption.isEmpty()) {
+                        options
+                    } else
+                        filteredItems.value.filter {
+                            it.toString().toLowerCase().contains(
+                                searchedOption.toLowerCase(),
+                            )
+                        }
+
+            },
+            leadingIcon = {
+                Icon(
+                    modifier = Modifier.size(24.dp),
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = null
+                )
+            },
+            placeholder = {
+                Text(
+                    text = "Search",
+
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.W600,
+                        fontSize = 16.sp,
+                    ),
+
+                    )
+            },
+            interactionSource = remember { MutableInteractionSource() }
+                .also { interactionSource ->
+                    LaunchedEffect(interactionSource) {
+
+                        interactionSource.interactions.collect {
+                            if (it is PressInteraction.Release) {
+                                // keyboardController?.show()
+                            }
+                        }
+                    }
+                },
+            colors = TextFieldDefaults.colors(
+            )
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+
+        LazyColumn(modifier = Modifier.padding(bottom = 100.dp)) {
+            items(filteredItems.value.filter { it.name!=null }) { option ->  ImageWithName(option.image,option.name)}
+
+        }
+
+    }
+
+    @Composable
+    fun ImageWithName(imageResource: Int, title: String) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(8.dp)
+        ) {
+            Image(
+                painter = painterResource(id = imageResource),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
 
 }

@@ -1,26 +1,30 @@
 package com.test.mindteck.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import android.annotation.SuppressLint
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.test.mindteck.R
 import com.test.mindteck.model.ItemModel
 
 class HomeViewModel: ViewModel() {
 
+    private var _recyclerViewItems = emptyList<ItemModel>()
+    val recyclerViewItems: MutableState<List<ItemModel>> = mutableStateOf( _recyclerViewItems)
+    private var _itemNameArray: ArrayList<String> = ArrayList<String>()
+    @SuppressLint("MutableCollectionMutableState")
+    val itemNameArray : MutableState<ArrayList<String>> = mutableStateOf(_itemNameArray)
 
-    // LiveData for RecyclerView items
-    private val _recyclerViewItems = MutableLiveData<List<ItemModel>>()
-    val recyclerViewItems: LiveData<List<ItemModel>> = _recyclerViewItems
-    var selectedItems : MutableLiveData<ItemModel> = MutableLiveData()
 
-    val images = listOf(
+    val _images = listOf(
         R.drawable.image1,
         R.drawable.image2,
         R.drawable.image3,
         R.drawable.image4,
         R.drawable.image5
     )
+
+    val images = mutableStateOf(_images)
     // Predefined data for ViewPager pages
     private val dataForPages = listOf(
         listOf(ItemModel("Apple", R.drawable.image1), ItemModel("Banana", R.drawable.image1), ItemModel("Orange", R.drawable.image1),ItemModel("Blueberry", R.drawable.image1),ItemModel("Apricot", R.drawable.image1),ItemModel("Avocado", R.drawable.image1),ItemModel("Peach", R.drawable.image1),ItemModel("BlackBerry", R.drawable.image1),ItemModel("Mango", R.drawable.image1),ItemModel("Guava", R.drawable.image1)),
@@ -32,21 +36,15 @@ class HomeViewModel: ViewModel() {
     private var currentPageItems = dataForPages[0]
 
     init {
-        _recyclerViewItems.value = currentPageItems
+        recyclerViewItems.value = currentPageItems
+        getNames()
     }
 
-    fun onPageChanged(position: Int) {
-        currentPageItems = dataForPages[position]
-        _recyclerViewItems.value = currentPageItems
-    }
-
-    fun filterItems(query: String) {
-        val filteredList = currentPageItems.filter { item ->
-            item.name.contains(query, ignoreCase = true)
+    private fun getNames()
+    {
+        for (data in _recyclerViewItems) {
+            _itemNameArray.add(data.name)
         }
-        _recyclerViewItems.value = filteredList
     }
-    fun getCurrentPageArrayList(): List<ItemModel> {
-        return currentPageItems
-    }
+
 }
