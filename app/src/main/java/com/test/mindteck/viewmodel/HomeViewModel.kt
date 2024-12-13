@@ -42,7 +42,7 @@ class HomeViewModel: ViewModel() {
 
     private fun getNames()
     {
-        for (data in _recyclerViewItems) {
+        for (data in recyclerViewItems.value ) {
             _itemNameArray.add(data.name)
         }
     }
